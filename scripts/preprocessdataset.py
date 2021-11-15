@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import numpy as np
 
 class DataProcessor(object):
     """This class preprocesses the sugarbeet data by matching the raw image datat with the annotations"""
@@ -26,12 +27,35 @@ class DataProcessor(object):
         out_list = []
         for s in string_list:
             stripped = s.replace(sub,"")
-            out_list.append(stripped)
-        if verbose: print(out_list)
-        return out_list
+            out_list.append([stripped,s])
 
-    def matchData(self,a,b):
-        return None
+        out_list = np.array(out_list)
+        if verbose: print(out_list)
+        return out_list #first col: stripped, second col: original
+
+    def matchData(self,a_arr,b_arr,verbose=False,debug=False):
+        """Matches items in list a with items in list b"""
+        if verbose:
+            print("Length of a:",len(a_arr))
+            print("Length of b:",len(b_arr))
+
+        # Create variables for matches
+        match_count = 0
+        matches = []
+
+        # Check if each item in a is present somewhere in b
+        for i in range(len(a_arr)):
+        # for a in a_arr[:,0]:
+            # Search for the index of the match
+            result = np.where(b_arr==a_arr[i,0])
+            if debug: print(a_arr[i,0],result[0])
+            # Check if we have a match
+            if len(result) > 0 and len(result[0]) > 0:
+                matches.append(a_arr[i,:])
+                match_count += 1
+
+        if verbose: print("Matches Found:",match_count)
+        return np.array(matches)
 
     def moveData(self):
         return None
@@ -43,9 +67,10 @@ class DataProcessor(object):
         img_originals = self.getFileNames(self.pathToOriginalImg,True)
 
         # Remove the Unwanted Info From the Ground Truth
-        img_annotations_no_sub = self.stripSubstring(img_annotations,verbose=True)
+        img_annotations = self.stripSubstring(img_annotations,verbose=True)
 
         # Match the Annotated Images with the Originals
+        self.matchData(img_annotations,np.array(img_originals),verbose=True)
 
         # Create Training and Test Set
 
