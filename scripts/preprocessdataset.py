@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import datetime
 import numpy as np
 
 class DataProcessor(object):
@@ -11,6 +12,7 @@ class DataProcessor(object):
         self.pathToAnnotations=pathToAnnotations
         self.pathToOriginalImg=pathToOriginalImg
         self.pathToOutputSet=pathToOutputSet
+        self.startTime = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         print("File Paths to be Used:")
         print("-->Annotations:",self.pathToAnnotations)
         print("-->Original Images:",self.pathToOriginalImg)
@@ -57,7 +59,28 @@ class DataProcessor(object):
         if verbose: print("Matches Found:",match_count)
         return np.array(matches)
 
-    def moveData(self):
+    def moveData(self,data_matches,pct_test,debug=True):
+        # Get the directory names
+        dir_set = os.path.join(self.pathToOutputSet,"Set_"+self.startTime)
+        dir_set_test = os.path.join(dir_set,"Test")
+        dir_set_train = os.path.join(dir_set,"Train")
+        if debug:
+            print(dir_set)
+            print(dir_set_test)
+            print(dir_set_train)
+
+        # Create Directories
+        os.makedirs(dir_set)
+        os.makedirs(dir_set_test)
+        os.makedirs(dir_set_train)
+
+        # Create Array of Random Indexes to split Train/Test Cases
+        num_test = pct_test * len(data_matches)
+        np.random.randint(0,10,20)
+
+        # Iterate Through the data
+
+
         return None
 
     def run(self):
@@ -66,13 +89,14 @@ class DataProcessor(object):
         img_annotations = self.getFileNames(self.pathToAnnotations,True)
         img_originals = self.getFileNames(self.pathToOriginalImg,True)
 
-        # Remove the Unwanted Info From the Ground Truth
+        # Remove the Unwanted Info From the Ground Truth String
         img_annotations = self.stripSubstring(img_annotations,verbose=True)
 
         # Match the Annotated Images with the Originals
-        self.matchData(img_annotations,np.array(img_originals),verbose=True)
+        img_matches = self.matchData(img_annotations,np.array(img_originals),verbose=True)
 
         # Create Training and Test Set
+        self.moveData()
 
         # Copy the files to a timestamped data folder
 
@@ -82,7 +106,8 @@ class DataProcessor(object):
 if __name__ == '__main__':
     try:
         preproc = DataProcessor("../data/ijrr_annotations_160523",
-            "../data/ijrr_sugarbeets_2016_annotations/CKA_160523/images/rgb")
+            "../data/ijrr_sugarbeets_2016_annotations/CKA_160523/images/rgb",
+            "../data/")
         preproc.run()
     except:
         print("ERROR, EXCEPTION THROWN")
