@@ -99,7 +99,6 @@ class DataProcessor(object):
             # Move the Ground Truth
             shutil.copy(os.path.join(self.pathToAnnotations,data_matches[i,1]),dir_ground_truth)
 
-
         return None
 
     def run(self):
