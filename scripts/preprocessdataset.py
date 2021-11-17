@@ -2,12 +2,14 @@
 
 import os
 import datetime
+import shutil
 import numpy as np
 
 class DataProcessor(object):
     """This class preprocesses the sugarbeet data by matching the raw image datat with the annotations"""
 
     def __init__(self,pathToAnnotations="",pathToOriginalImg="",pathToOutputSet=""):
+        """The initializing expects paths to annotated and original data as well as an output directory"""
         print("Initializing DataProcessor")
         self.pathToAnnotations=pathToAnnotations
         self.pathToOriginalImg=pathToOriginalImg
@@ -59,26 +61,43 @@ class DataProcessor(object):
         if verbose: print("Matches Found:",match_count)
         return np.array(matches)
 
-    def moveData(self,data_matches,pct_test,debug=True):
+    def copyData(self,data_matches,pct_test=None,debug=True):
+        """This function copies the matched original/annotated images into the output direcoty"""
         # Get the directory names
         dir_set = os.path.join(self.pathToOutputSet,"Set_"+self.startTime)
-        dir_set_test = os.path.join(dir_set,"Test")
-        dir_set_train = os.path.join(dir_set,"Train")
+        dir_original = os.path.join(dir_set,"Original")
+        dir_ground_truth = os.path.join(dir_set,"GroundTruth")
         if debug:
             print(dir_set)
-            print(dir_set_test)
-            print(dir_set_train)
+            print(dir_original)
+            print(dir_ground_truth)
 
         # Create Directories
         os.makedirs(dir_set)
-        os.makedirs(dir_set_test)
-        os.makedirs(dir_set_train)
+        os.makedirs(dir_original)
+        os.makedirs(dir_ground_truth)
 
-        # Create Array of Random Indexes to split Train/Test Cases
-        num_test = pct_test * len(data_matches)
-        np.random.randint(0,10,20)
+        # Only make directories to split test/train if required
+        if pct_test is not None:
+            dir_set_test = os.path.join(dir_set,"Test")
+            dir_set_train = os.path.join(dir_set,"Train")
+            if debug: print(dir_set_test)
+            if debug: print(dir_set_train)
+            os.makedirs(dir_set_test)
+            os.makedirs(dir_set_train)
+
+            # Create Array of Random Indexes to split Train/Test Cases
+            num_test = pct_test * len(data_matches)
+            np.random.randint(0,10,20) # TODO:NYI:SPLIT TEST/TRAIN
 
         # Iterate Through the data
+        for i in range(len(data_matches)):
+            print("Preparing to Copy:",data_matches[i,:])
+            # Move the Original Image
+            shutil.copy(os.path.join(self.pathToOriginalImg,data_matches[i,0]),dir_original)
+
+            # Move the Ground Truth
+            shutil.copy(os.path.join(self.pathToAnnotations,data_matches[i,1]),dir_ground_truth)
 
 
         return None
@@ -86,20 +105,17 @@ class DataProcessor(object):
     def run(self):
         print('Processing Data')
         # Get the List of Annotated and Original Images
-        img_annotations = self.getFileNames(self.pathToAnnotations,True)
-        img_originals = self.getFileNames(self.pathToOriginalImg,True)
+        img_annotations = self.getFileNames(self.pathToAnnotations,False)
+        img_originals = self.getFileNames(self.pathToOriginalImg,False)
 
         # Remove the Unwanted Info From the Ground Truth String
-        img_annotations = self.stripSubstring(img_annotations,verbose=True)
+        img_annotations = self.stripSubstring(img_annotations,verbose=False)
 
         # Match the Annotated Images with the Originals
-        img_matches = self.matchData(img_annotations,np.array(img_originals),verbose=True)
-
-        # Create Training and Test Set
-        self.moveData()
+        img_matches = self.matchData(img_annotations,np.array(img_originals),verbose=False)
 
         # Copy the files to a timestamped data folder
-
+        self.copyData(img_matches)
 
         return None
 
