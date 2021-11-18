@@ -94,10 +94,13 @@ class DataProcessor(object):
         for i in range(len(data_matches)):
             print("Preparing to Copy:",data_matches[i,:])
             # Move the Original Image
-            shutil.copy(os.path.join(self.pathToOriginalImg,data_matches[i,0]),dir_original)
+            orig_out = dir_original+"/Original"+f'{i:04}'+".png"
+            if debug: print(orig_out)
+            shutil.copy(os.path.join(self.pathToOriginalImg,data_matches[i,0]),orig_out)
 
             # Move the Ground Truth
-            shutil.copy(os.path.join(self.pathToAnnotations,data_matches[i,1]),dir_ground_truth)
+            gt_out = dir_ground_truth+"/GroundTruth"+f'{i:04}'+".png"
+            shutil.copy(os.path.join(self.pathToAnnotations,data_matches[i,1]),gt_out)
 
         return None
 
