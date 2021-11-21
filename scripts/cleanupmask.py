@@ -7,6 +7,8 @@ import numpy as np
 import cv2 as cv
 import sys
 import matplotlib.pyplot as plt
+import pandas as pd
+
 
 class CleanUpMask(object):
     """This script cleans up the noise in the mask annotations"""
@@ -112,23 +114,24 @@ class CleanUpMask(object):
         """
         1 (Sugar Beets) + 9 (Weeds) = 10 Classes
 
-        Currently 17 classes, some are mislabelled
+        Currently 17 classes, some are mislabelled, This function manually
+        relables the classes
 
         0: '75' = Sugar Beet
-        1: '[28,57]' = Weed (Type: Blue)
+        1: '[57]' = Weed (Type: Blue)
         2: '[186]' = Weed (Type: Neon Green)
         3: '[163,166]' = Weed (Type: Orange)
-        4: '[171,175]' = Weed (Type: Cyan)
+        4: '[171,185]' = Weed (Type: Cyan)
         5: '[193,194]' = Weed (Type: Gold)
         6: '[203,214]' = Weed (Type: Sea Green)
-        7: '[134,139]' = Weed (Type: Grey)
+        7: '[134,149]' = Weed (Type: Grey)
         8: '[105,116]' = Weed (Type: Unknown)
         9: '[28]' = Weed (Type: Unknown)
 
-        Identified:    [             x     x     x     x     x     x     x           x     x     x     x     x    x    x  ]
+        Identified:    [ x     x     x     x     x     x     x     x     x     x     x     x     x     x     x    x    x  ]
         Vals:          ['105' '116' '134' '149' '163' '166' '171' '173' '175' '185' '193' '194' '203' '214' '28' '57' '75']
         Counts:        [ 102   9     21    21    650   7     2     26    33    21    235   15    109   25    17   3604 1756]
-        Labels:        [                                                                                                   ]
+        Labels:        [ 8     8     7     7     3     3     4     4     4     2     5     5     6     6     9    1    0]
         """
 
         # Remove the first garbage entry from np.empty[]
@@ -140,21 +143,41 @@ class CleanUpMask(object):
             print(vals)
             print(counts)
 
-            #Sugar Beats + 9 Weeds
+        # Manually Assign Labels
+        labels = np.empty([data.shape[0],1])
+        labels[data[:,1]=='105']=8
+        labels[data[:,1]=='116']=8
+        labels[data[:,1]=='134']=7
+        labels[data[:,1]=='149']=7
+        labels[data[:,1]=='163']=3
+        labels[data[:,1]=='166']=3
+        labels[data[:,1]=='171']=4
+        labels[data[:,1]=='173']=4
+        labels[data[:,1]=='175']=4
+        labels[data[:,1]=='185']=2
+        labels[data[:,1]=='193']=5
+        labels[data[:,1]=='194']=5
+        labels[data[:,1]=='203']=6
+        labels[data[:,1]=='214']=6
+        labels[data[:,1]=='28']=9
+        labels[data[:,1]=='57']=1
+        labels[data[:,1]=='75']=0
 
+        vals, counts = np.unique(labels,return_counts=True)
+        if debug:
+            print(labels)
+            print(vals)
+            print(counts)
 
-        shades = data[:,1]
-        shades = shades.astype(np.float)
-
-
-        hist = np.histogram(shades,bins=10)
-        if verbose: print(hist)
-        plt.plot(hist)
-        plt.ylabel('count')
-        plt.show()
-        return data
+        return np.hstack((data,labels))
 
     def run(self,img_dir,mask_dir,output_dir,verbose=True,debug=True):
+        """
+        This function batch processes the images and masks contained in their
+        respective directories. The output data is stored in a new directory
+        along with a file titled key.csv that maps the image names to the
+        appropriate label.
+        """
 
         # Determine the File Names
         self.img_dir = img_dir
@@ -191,9 +214,10 @@ class CleanUpMask(object):
 
         # Clean, then save Image + Label Pairs
         image_label_pairs = self.cleanLabels(image_label_pairs,verbose,debug)
+        if debug: print(image_label_pairs)
+        pd.DataFrame(image_label_pairs).to_csv(self.output_dir+"key.csv",header=None,index=None)
 
-
-        return None
+        return image_label_pairs
 
 def testSingleImage():
     cleanup = CleanUpMask()
