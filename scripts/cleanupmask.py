@@ -40,33 +40,7 @@ class CleanUpMask(object):
             plt.ylabel('some numbers')
             plt.show()
 
-        # # Apply Blob Detector
-        # params = cv.SimpleBlobDetector_Params()
-        # # Filter by Area.
-        # params.filterByArea = True
-        # params.minArea = 1500
-        #
-        # # Filter by Circularity
-        # params.filterByCircularity = False
-        # params.minCircularity = 0.1
-        #
-        # # Filter by Convexity
-        # params.filterByConvexity = True
-        # params.minConvexity = 0.87
-        #
-        # # Filter by Inertia
-        # params.filterByInertia = True
-        # params.minInertiaRatio = 0.01
-        #
-        # detector = cv.SimpleBlobDetector_create(params)
-        # keypoints = detector.detect(img_gray)
-        # if showImage:
-        #     im_with_keypoints = cv.drawKeypoints(img_gray, keypoints, np.array([]), (0,0,255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        #     cv.imshow("Keypoints", im_with_keypoints)
-        #     cv.waitKey(0)
-
-        # Find
-        # ret, thresh = cv.threshold(img_gray, 150, 255, cv.THRESH_BINARY)
+        # Find Contours in Image
         thresh = img_gray
         contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         if showImage:
