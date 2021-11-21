@@ -15,6 +15,7 @@ class CleanUpMask(object):
         print("Initializing Mask Cleanup Utility")
         self.contour_color = (0,255,255)
         self.contour_min_area = 50
+        self.frame_count = 0
 
     def openImages(self,pathToImg,pathToMask):
         """Accepts the string path to the original image and associated mask"""
@@ -28,11 +29,13 @@ class CleanUpMask(object):
         else: return True
 
     def splitMasks(self,img,mask,showHistogram=False,showImage=False,debug=True):
-        if debug: print(img.shape)
 
-        # Convert the images to greyscale
+
+        # Convert the mask to greyscale
         mask_gray = cv.cvtColor(mask, cv.COLOR_BGR2GRAY)
-        if debug: print(mask_gray.shape)
+        if debug:
+            print(img.shape)
+            print(mask_gray.shape)
 
         # Show the GreyScale Image
         if showImage:
@@ -49,14 +52,16 @@ class CleanUpMask(object):
             contours_poly[i] = cv.approxPolyDP(c, 3, True)
             bound_rect[i] = cv.boundingRect(contours_poly[i])
         if showImage:
+            img_vis = img.copy()
             for i in range(len(contours)):
-                cv.drawContours(img, contours_poly, i, self.contour_color)
-                cv.rectangle(img, (int(bound_rect[i][0]), int(bound_rect[i][1])), \
+                cv.drawContours(img_vis, contours_poly, i, self.contour_color)
+                cv.rectangle(img_vis, (int(bound_rect[i][0]), int(bound_rect[i][1])), \
                     (int(bound_rect[i][0]+bound_rect[i][2]), int(bound_rect[i][1]+bound_rect[i][3])), self.contour_color, 2)
-            cv.imshow("Contours",img)
+            cv.imshow("Contours",img_vis)
             cv.waitKey(0)
 
-        # Break Up the Image Into Multiple Images
+        # Break Up the Image Into Multiple Images for each class
+        output = [] # Image Name + Label
         for i in range(len(bound_rect)):
             r = bound_rect[i]
             if debug: print(r)
@@ -64,13 +69,25 @@ class CleanUpMask(object):
             # Filter out the contours that are too small
             if cv.contourArea(contours[i]) < self.contour_min_area:
                 continue
-            # Crop the Image to the desired ROI
+
+            # Crop the Image and Mask to the desired ROI
             img_crop = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
-            label = self.getDominateShade(img_crop,showHistogram,debug)
-            if showImage: cv.imshow("Image-"+str(i)+"-"+str(label), img_crop)
+            mask_crop = mask_gray[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
+
+            # Assign the Label and New Image Name
+            label_crop = self.getDominateShade(mask_crop,showHistogram,debug)
+            name_crop = "Image-"+f'{self.frame_count:06}'+".png"
+            self.frame_count += 1 # Increment Frame Counter
+
+            # Append to the output array
+            output.append([name_crop,label_crop])
+
+            # Resize & Save the Image
+
+            if showImage: cv.imshow(name_crop, img_crop)
         if showImage: cv.waitKey(0)
 
-        return None
+        return np.array(output)
 
     def getDominateShade(self,mask_gray,showHistogram=False,debug=True):
         """Returns the dominate shade in a grayscale image"""
@@ -85,17 +102,120 @@ class CleanUpMask(object):
         if debug: print(hist)
         if showHistogram:
             plt.plot(hist)
-            plt.ylabel('some numbers')
+            plt.ylabel('number of pixels')
             plt.show()
 
         # Return the Index of the Maximum Value
         return np.argmax(hist)
 
+    def cleanLabels(self,data,verbose=False,debug=False):
+        """
+        1 (Sugar Beets) + 9 (Weeds) = 10 Classes
+
+        Currently 17 classes, some are mislabelled
+
+        0: '75' = Sugar Beet
+        1: '[28,57]' = Weed (Type: Blue)
+        2: '[186]' = Weed (Type: Neon Green)
+        3: '[163,166]' = Weed (Type: Orange)
+        4: '[171,175]' = Weed (Type: Cyan)
+        5: '[193,194]' = Weed (Type: Gold)
+        6: '[203,214]' = Weed (Type: Sea Green)
+        7: '[134,139]' = Weed (Type: Grey)
+        8: '[105,116]' = Weed (Type: Unknown)
+        9: '[28]' = Weed (Type: Unknown)
+
+        Identified:    [             x     x     x     x     x     x     x           x     x     x     x     x    x    x  ]
+        Vals:          ['105' '116' '134' '149' '163' '166' '171' '173' '175' '185' '193' '194' '203' '214' '28' '57' '75']
+        Counts:        [ 102   9     21    21    650   7     2     26    33    21    235   15    109   25    17   3604 1756]
+        Labels:        [                                                                                                   ]
+        """
+
+        # Remove the first garbage entry from np.empty[]
+        data = data[1:-1,:]
+        if debug and verbose: print(data)
+        if debug: print(data.shape)
+        vals, counts = np.unique(np.sort(data[:,1]),return_counts=True)
+        if debug:
+            print(vals)
+            print(counts)
+
+            #Sugar Beats + 9 Weeds
+
+
+        shades = data[:,1]
+        shades = shades.astype(np.float)
+
+
+        hist = np.histogram(shades,bins=10)
+        if verbose: print(hist)
+        plt.plot(hist)
+        plt.ylabel('count')
+        plt.show()
+        return data
+
+    def run(self,img_dir,mask_dir,output_dir,verbose=True,debug=True):
+
+        # Determine the File Names
+        self.img_dir = img_dir
+        self.mask_dir = mask_dir
+        self.output_dir = output_dir
+        if verbose:
+            print("Image Directory:",self.img_dir)
+            print("Mask Directory:",self.mask_dir)
+            print("Output Directory:",self.output_dir)
+
+        img_filenames = next(os.walk(self.img_dir), (None, None, []))[2]
+        mask_filenames = next(os.walk(self.mask_dir), (None, None, []))[2]
+
+        if debug and verbose:
+            print(img_filenames)
+            print(mask_filenames)
+
+        # Iterate Over the images
+        image_label_pairs = np.empty([1,2])
+        for i in range(len(img_filenames)):
+
+            # Open up the Mask and the Original Image
+            img_path = os.path.join(self.img_dir,img_filenames[i])
+            mask_path = os.path.join(self.mask_dir,mask_filenames[i])
+            if not self.openImages(img_path,mask_path):
+                continue # Skip bad reads
+
+            # Split the Masks
+            new_data = self.splitMasks(self.img,self.mask,False,False)
+            image_label_pairs = np.vstack((image_label_pairs,new_data))
+
+            # Add to Larger Table
+            if verbose: print(new_data)
+
+        # Clean, then save Image + Label Pairs
+        image_label_pairs = self.cleanLabels(image_label_pairs,verbose,debug)
+
+
+        return None
+
+def testSingleImage():
+    cleanup = CleanUpMask()
+    cleanup.openImages("../data/CleaningTests/Original0123.png","../data/CleaningTests/GroundTruth0123.png")
+    new_img_list1 = cleanup.splitMasks(cleanup.img,cleanup.mask,False,True)
+    cleanup.openImages("../data/CleaningTests/Original0123.png","../data/CleaningTests/GroundTruth0123.png")
+    new_img_list2 = cleanup.splitMasks(cleanup.img,cleanup.mask,False,True)
+    new_img_list = np.vstack((new_img_list1,new_img_list2))
+    print(new_img_list)
+    cv.destroyAllWindows()
+
+def testBatchImage():
+    cleanup = CleanUpMask()
+    cleanup.run(
+        "../data/Set_Clean/Original/",
+        "../data/Set_Clean/GroundTruth/",
+        "../data/Set_Clean/Split/")
+
 if __name__ == '__main__':
     # try:
-        cleanup = CleanUpMask()
-        cleanup.splitMasks("../data/CleaningTests/InputTest.png",True,True)
-        cv.destroyAllWindows()
+        # testSingleImage()
+        testBatchImage()
     # except:
         print("ERROR, EXCEPTION THROWN")
         pass
