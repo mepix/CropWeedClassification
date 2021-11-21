@@ -13,6 +13,8 @@ class CleanUpMask(object):
 
     def __init__(self):
         print("Initializing Mask Cleanup Utility")
+        self.color_contour = (0,255,255)
+        self.contour_min_area = 50
 
     def findUniqueColorClasses(self,filePath,showHistogram=False,showImage=False,debug=True):
         # Open Each Image
@@ -30,7 +32,6 @@ class CleanUpMask(object):
             cv.imshow('Gray image', img_gray)
             cv.waitKey(0)
 
-
         # Find the unique, dominate colors in the image
         hist = cv.calcHist([img_gray], [0], None, [256], [0, 256])
         # hist /= hist.sum() # normalize
@@ -41,12 +42,33 @@ class CleanUpMask(object):
             plt.show()
 
         # Find Contours in Image
-        thresh = img_gray
-        contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv.findContours(img_gray, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+        # Find Contour Bounding Boxes
+        contours_poly = [None]*len(contours)
+        bound_rect = [None]*len(contours)
+        for i, c in enumerate(contours):
+            contours_poly[i] = cv.approxPolyDP(c, 3, True)
+            bound_rect[i] = cv.boundingRect(contours_poly[i])
+
         if showImage:
-            cv.drawContours(img, contours, -1, (0,255,255), 3)
+            for i in range(len(contours)):
+                cv.drawContours(img, contours_poly, i, self.color_contour)
+                cv.rectangle(img, (int(bound_rect[i][0]), int(bound_rect[i][1])), \
+                    (int(bound_rect[i][0]+bound_rect[i][2]), int(bound_rect[i][1]+bound_rect[i][3])), self.color_contour, 2)
             cv.imshow("Contours",img)
             cv.waitKey(0)
+
+        # Break Up the Image Into Multiple Images
+        for i in range(len(bound_rect)):
+            r = bound_rect[i]
+            if cv.contourArea(contours[i]) < self.contour_min_area:
+                continue
+            if debug: print(r)
+            img_crop = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
+            cv.imshow("Image"+str(i), img_crop)
+        cv.waitKey(0)
+
 
 
 
