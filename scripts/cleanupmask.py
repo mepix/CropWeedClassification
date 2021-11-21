@@ -16,7 +16,7 @@ class CleanUpMask(object):
     def __init__(self):
         print("Initializing Mask Cleanup Utility")
         self.contour_color = (0,255,255)
-        self.contour_min_area = 50
+        self.contour_min_area = 200
         self.frame_count = 0
 
     def openImages(self,pathToImg,pathToMask):
@@ -85,6 +85,8 @@ class CleanUpMask(object):
             output.append([name_crop,label_crop])
 
             # Resize & Save the Image
+            img_out = cv.resize(img_crop,(512,512))
+            cv.imwrite(self.output_dir+name_crop,img_out)
 
             if showImage: cv.imshow(name_crop, img_crop)
         if showImage: cv.waitKey(0)
@@ -237,9 +239,9 @@ def testBatchImage():
         "../data/Set_Clean/Split/")
 
 if __name__ == '__main__':
-    # try:
+    try:
         # testSingleImage()
         testBatchImage()
-    # except:
+    except:
         print("ERROR, EXCEPTION THROWN")
         pass
