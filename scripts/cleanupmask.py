@@ -173,6 +173,20 @@ class CleanUpMask(object):
 
         return np.hstack((data,labels))
 
+    def regroupImg(self,key):
+        # Make a Directory for Each Class
+        labels = np.unique(key[:,2])
+        for i in labels:
+            os.makedirs(os.path.join(self.output_dir,"Class"+i))
+
+        # Iterate Through the Data and Move to the Appropriate Directory
+        for i in range(len(key)):
+            a = os.path.join(self.output_dir,key[i,0])
+            b = os.path.join(self.output_dir,"Class"+key[i,2],key[i,0])
+            shutil.copy(a,b)
+
+        return None
+
     def run(self,img_dir,mask_dir,output_dir,verbose=True,debug=True):
         """
         This function batch processes the images and masks contained in their
@@ -233,15 +247,23 @@ def testSingleImage():
 
 def testBatchImage():
     cleanup = CleanUpMask()
-    cleanup.run(
+    key = cleanup.run(
         "../data/Set_Clean/Original/",
         "../data/Set_Clean/GroundTruth/",
         "../data/Set_Clean/Split/")
+    cleanup.regroupImg(key)
+
+def testRegroupImage():
+    cleanup = CleanUpMask()
+    cleanup.output_dir = "../data/Set_Clean/Split/"
+    cleanup.regroupImg("123")
+
 
 if __name__ == '__main__':
-    try:
+    # try:
         # testSingleImage()
         testBatchImage()
-    except:
+        # testRegroupImage()
+    # except:
         print("ERROR, EXCEPTION THROWN")
         pass
