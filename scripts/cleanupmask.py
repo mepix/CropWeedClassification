@@ -260,10 +260,10 @@ def testRegroupImage():
 
 
 if __name__ == '__main__':
-    # try:
+    try:
         # testSingleImage()
         testBatchImage()
         # testRegroupImage()
-    # except:
+    except:
         print("ERROR, EXCEPTION THROWN")
         pass
