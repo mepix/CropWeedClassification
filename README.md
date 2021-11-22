@@ -12,11 +12,21 @@ This repository uses image data to classify desired crops from unwanted weeds
 - data: folder where the data resides for the prepocessing functions (omitted by `.gitignore`)
 - pytorch-vision: open source helper functions
 
-
-
 ## References
 
 ### Data Sources
+
+This project uses images from the [Sugar Beets 2016 Dataset](https://www.ipb.uni-bonn.de/data/sugarbeets2016/). The data can be downloaded [here](https://www.ipb.uni-bonn.de/datasets_IJRR2017/).
+
+```
+@article{chebrolu2017ijrr,
+title = {Agricultural robot dataset for plant classification, localization and mapping on sugar beet fields},
+author = {Nived Chebrolu and Philipp Lottes and Alexander Schaefer and Wera Winterhalter and Wolfram Burgard and Cyrill Stachniss},
+journal = {The International Journal of Robotics Research},
+year = {2017}
+doi = {10.1177/0278364917720510},
+}
+```
 
 ### Developer References
 
