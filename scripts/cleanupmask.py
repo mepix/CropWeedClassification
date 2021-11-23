@@ -31,7 +31,11 @@ class CleanUpMask(object):
         else: return True
 
     def splitMasks(self,img,mask,showHistogram=False,showImage=False,debug=True):
-
+        """
+        Accepts an image and mask (of the same size) and creates many cropped
+        images corresponding to the mask. These files will be saved according
+        to the index created at the time the class is initialized.
+        """
 
         # Convert the mask to greyscale
         mask_gray = cv.cvtColor(mask, cv.COLOR_BGR2GRAY)
@@ -57,6 +61,7 @@ class CleanUpMask(object):
             img_vis = img.copy()
             for i in range(len(contours)):
                 cv.drawContours(img_vis, contours_poly, i, self.contour_color)
+                # rect = [(top_left_row,top_left_col)(bottom_right_row,bottom_right_col)]
                 cv.rectangle(img_vis, (int(bound_rect[i][0]), int(bound_rect[i][1])), \
                     (int(bound_rect[i][0]+bound_rect[i][2]), int(bound_rect[i][1]+bound_rect[i][3])), self.contour_color, 2)
             cv.imshow("Contours",img_vis)
@@ -73,8 +78,12 @@ class CleanUpMask(object):
                 continue
 
             # Crop the Image and Mask to the desired ROI
+            # [y:y+h, x:x+w]
             img_crop = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
             mask_crop = mask_gray[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
+            if img_crop.size == 0:
+                print("ERROR, EMPTY IMAGE")
+                continue
 
             # Assign the Label and New Image Name
             label_crop = self.getDominateShade(mask_crop,showHistogram,debug)
@@ -86,7 +95,7 @@ class CleanUpMask(object):
 
             # Resize & Save the Image
             img_out = cv.resize(img_crop,(512,512))
-            cv.imwrite(self.output_dir+name_crop,img_out)
+            #cv.imwrite(self.output_dir+name_crop,img_out)
 
             if showImage: cv.imshow(name_crop, img_crop)
         if showImage: cv.waitKey(0)
@@ -174,6 +183,10 @@ class CleanUpMask(object):
         return np.hstack((data,labels))
 
     def regroupImg(self,key):
+        """
+        Accepts a paired key of image files and labels and sorts the images
+        into new folders corresponding to each class label
+        """
         # Make a Directory for Each Class
         labels = np.unique(key[:,2])
         for i in labels:
