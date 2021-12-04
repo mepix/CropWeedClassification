@@ -30,7 +30,7 @@ class CleanUpMask(object):
             return False
         else: return True
 
-    def splitMasks(self,img,mask,showHistogram=False,showImage=False,debug=True):
+    def splitMasks(self,img,mask,showHistogram=False,showImage=False,blankOutBackground=False,debug=True):
         """
         Accepts an image and mask (of the same size) and creates many cropped
         images corresponding to the mask. These files will be saved according
@@ -76,6 +76,10 @@ class CleanUpMask(object):
             # Filter out the contours that are too small
             if cv.contourArea(contours[i]) < self.contour_min_area:
                 continue
+
+            # Set all pixels outside the ROI to black
+            if blankOutBackground: #TODO: THIS SEEMS TO BE VERY BUGGY
+                img = self.blankOutBackground(img,contours[i])
 
             # Crop the Image and Mask to the desired ROI
             # [y:y+h, x:x+w]
@@ -200,6 +204,32 @@ class CleanUpMask(object):
 
         return None
 
+    def blankOutBackground(self,img,contours):
+        """
+        Accepts an image and a contour and sets all pixels outside the selected
+        contour to black
+        """
+        # Create the stencil
+        # stencil = np.zeros(img.shape).astype(img.dtype)
+
+        # Fill with the color black
+        # color = [255, 255, 255]
+        # cv.fillPoly(stencil, contours, color)
+        # result = cv.bitwise_and(img, stencil)
+
+        fill_color = [0, 255, 255] # any BGR color value to fill with
+        mask_value = 255            # 1 channel white (can be any non-zero uint8 value)
+
+        # our stencil - some `mask_value` contours on black (zeros) background,
+        # the image has same height and width as `img`, but only 1 color channel
+        stencil  = np.zeros(img.shape[:-1]).astype(np.uint8)
+        cv.fillPoly(stencil, contours, mask_value)
+
+        sel      = stencil != mask_value # select everything that is not mask_value
+        img[sel] = fill_color            # and fill it with fill_color
+
+        return img
+
     def run(self,img_dir,mask_dir,output_dir,verbose=True,debug=True):
         """
         This function batch processes the images and masks contained in their
@@ -251,9 +281,9 @@ class CleanUpMask(object):
 def testSingleImage():
     cleanup = CleanUpMask()
     cleanup.openImages("../data/CleaningTests/Original0123.png","../data/CleaningTests/GroundTruth0123.png")
-    new_img_list1 = cleanup.splitMasks(cleanup.img,cleanup.mask,False,True)
+    new_img_list1 = cleanup.splitMasks(cleanup.img,cleanup.mask,False,True,False)
     cleanup.openImages("../data/CleaningTests/Original0123.png","../data/CleaningTests/GroundTruth0123.png")
-    new_img_list2 = cleanup.splitMasks(cleanup.img,cleanup.mask,False,True)
+    new_img_list2 = cleanup.splitMasks(cleanup.img,cleanup.mask,False,True,False)
     new_img_list = np.vstack((new_img_list1,new_img_list2))
     print(new_img_list)
     cv.destroyAllWindows()
@@ -274,8 +304,8 @@ def testRegroupImage():
 
 if __name__ == '__main__':
     try:
-        # testSingleImage()
-        testBatchImage()
+        testSingleImage()
+        # testBatchImage()
         # testRegroupImage()
     except:
         print("ERROR, EXCEPTION THROWN")
