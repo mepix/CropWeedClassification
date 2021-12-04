@@ -1,22 +1,33 @@
 # Crop Weed Classification
 
-This repository uses image data to classify desired crops from unwanted weeds
+This project uses image data to distinguish desired crops from unwanted weeds. The classifier used is ResNet18 and the data comes from the [Sugar Beets 2016 Dataset](https://www.ipb.uni-bonn.de/data/sugarbeets2016/). This repository contains the [scripts](https://github.com/mepix/CropWeedClassification/tree/main/scripts) necessary to preprocess the dataset and the notebooks necessary to train the classifier. You will need to prepare the dataset yourself, but the notebooks can be run in Colab:
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mepix/CropWeedClassification/blob/main/CropCNN.ipynb)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Z75ffmmFIvQZ91ksWE6xCglssYIy89yh?usp=sharing)
+![Software System Diagram](./img/systemdiagram.png)
 
+## Results
+
+The classifier is far from perfect, but this project helped me learn a lot about data processing, unevenly distributed data sets, and PyTorch. Performance metrics can be viewed in the [reports and presentations](https://github.com/mepix/CropWeedClassification/tree/main/reports%2Bslides).
+
+![Successful Detection](./img/example1.png)
+![Successful Detection](./img/example3.png)
+![Incorrect Detection](./img/example2.png)
+![Incorrect Detection](./img/example4.png)
 
 ## Repository Structure
 
-- scripts: python files for prepocessing the input dataset
-- data: folder where the data resides for the prepocessing functions (omitted by `.gitignore`)
+- scripts: python files for preprocessing the input dataset
+- data: folder where the data resides for the preprocessing functions (omitted by `.gitignore`, you will need to create your own)
 - pytorch-vision: open source helper functions
+- img: supporting images
+- reports+slides: final report and slides for EE244
 
 ## References
 
 ### Data Sources
 
-This project uses images from the [Sugar Beets 2016 Dataset](https://www.ipb.uni-bonn.de/data/sugarbeets2016/). The data can be downloaded [here](https://www.ipb.uni-bonn.de/datasets_IJRR2017/).
+This project uses images from the [Sugar Beets 2016 Dataset](https://www.ipb.uni-bonn.de/data/sugarbeets2016/). The data can be downloaded [here](https://www.ipb.uni-bonn.de/datasets_IJRR2017/). Please cite their work! :)
 
 ```
 @article{chebrolu2017ijrr,
